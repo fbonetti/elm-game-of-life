@@ -11,5 +11,10 @@
         "chendrix/elm-matrix": "3.1.0 <= v < 4.0.0",
         "elm-lang/core": "3.0.0 <= v < 4.0.0"
     },
-    "elm-version": "0.16.0 <= v < 0.17.0"
+    "elm-version": "0.16.0 <= v < 0.17.0",
+    "sublime-build": {
+        "output": {
+            "path": "elm.js"
+        }
+    }
 }

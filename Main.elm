@@ -2,9 +2,10 @@ import Graphics.Collage exposing (..)
 import Graphics.Element exposing (Element, show)
 import Color exposing (blue, white)
 import Matrix exposing (Matrix, Location)
+import Matrix.Random
 import Time exposing (Time)
 import Signal
-import Debug
+import Random
 
 -- SIGNALS
 
@@ -12,7 +13,7 @@ main : Signal Element
 main =
   Signal.map
     view
-    (Signal.foldp update init (Time.every Time.second))
+    (Signal.foldp update init (Time.fps 60))
 
 -- MODEL
 
@@ -20,13 +21,10 @@ type alias Grid = Matrix Bool
 
 init : Grid
 init =
-  Matrix.fromList
-    [ [False, False, False, False, False]
-    , [False, False, False, False, False]
-    , [False, True, True, True, False]
-    , [False, False, True, False, False]
-    , [False, False, False, False, False]
-    ]
+  let
+    generator = Matrix.Random.matrix (Random.int 80 80) (Random.int 80 80) (Random.bool)
+  in
+    Random.generate generator (Random.initialSeed 128) |> fst
 
 -- UPDATE
 
@@ -40,6 +38,7 @@ neighbours grid (x,y) =
   List.concatMap (\x -> List.map (\y -> (x,y)) [-1..1]) [-1..1]
     |> List.filter (\(dx,dy) -> not (dx == 0 && dy == 0))
     |> List.map (\(dx,dy) -> (x - dx, y - dy))
+    |> List.map (\(x',y') -> (if x' == -1 then 49 else x', if y' == -1 then 49 else y'))
     |> List.filterMap ((flip Matrix.get) grid)
 
 count : (a -> Bool) -> List a -> Int
@@ -68,7 +67,7 @@ transformCell grid location alive =
       False
 
 update : Time -> Grid -> Grid
-update _ grid =
+update time grid =
   Matrix.mapWithLocation (transformCell grid) grid
 
 
@@ -82,12 +81,16 @@ renderCell (location, alive) =
   in
     square 5
       |> filled (if alive then blue else white)
-      |> move (x * 5,y * 5)
+      |> move (x * 5 - 200,y * 5 - 200)
 
-view : Grid -> Element
-view grid =
+renderGrid : Grid -> Element
+renderGrid grid =
   Matrix.mapWithLocation (,) grid
     |> Matrix.toList
     |> List.concat
     |> List.map renderCell
-    |> collage 500 500
+    |> collage 500 500  
+
+view : Grid -> Element
+view grid =
+  renderGrid grid

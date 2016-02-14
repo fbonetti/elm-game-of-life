@@ -1,11 +1,12 @@
 import Graphics.Collage exposing (..)
-import Graphics.Element exposing (Element, show)
+import Graphics.Element exposing (Element, show, flow, right, down, leftAligned)
 import Color exposing (blue, white)
 import Matrix exposing (Matrix, Location)
 import Matrix.Random
 import Time exposing (Time)
 import Signal
 import Random
+import Text
 
 -- SIGNALS
 
@@ -93,6 +94,20 @@ renderGrid grid =
     |> List.map renderCell
     |> collage 500 500  
 
+stats : Grid -> Element
+stats grid =
+  let
+    livingCells = (Matrix.flatten >> List.filter identity >> List.length) grid
+    deadCells = (Matrix.flatten >> List.filter not >> List.length) grid
+  in
+    flow down
+      [ leftAligned (Text.fromString ("Living cells: " ++ toString livingCells))
+      , leftAligned (Text.fromString ("Dead cells: " ++ toString deadCells))
+      ]
+
 view : Grid -> Element
 view grid =
-  renderGrid grid
+  flow right
+    [ renderGrid grid
+    , stats grid
+    ]

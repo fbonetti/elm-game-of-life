@@ -24,7 +24,9 @@ init =
   let
     generator = Matrix.Random.matrix (Random.int 80 80) (Random.int 80 80) (Random.bool)
   in
-    Random.generate generator (Random.initialSeed 128) |> fst
+    Random.generate generator (Random.initialSeed externalSeed) |> fst
+
+port externalSeed : Int
 
 -- UPDATE
 

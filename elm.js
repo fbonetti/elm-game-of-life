@@ -6967,16 +6967,25 @@ Elm.Main.make = function (_elm) {
    $Random = Elm.Random.make(_elm),
    $Result = Elm.Result.make(_elm),
    $Signal = Elm.Signal.make(_elm),
+   $Text = Elm.Text.make(_elm),
    $Time = Elm.Time.make(_elm);
    var _op = {};
-   var renderCell = function (_p0) {
-      var _p1 = _p0;
-      var _p4 = _p1._0;
-      var y = function (_p2) {    return $Basics.toFloat($Basics.snd(_p2));}(_p4);
-      var x = function (_p3) {    return $Basics.toFloat($Basics.fst(_p3));}(_p4);
+   var stats = function (grid) {
+      var deadCells = function (_p0) {    return $List.length(A2($List.filter,$Basics.not,$Matrix.flatten(_p0)));}(grid);
+      var livingCells = function (_p1) {    return $List.length(A2($List.filter,$Basics.identity,$Matrix.flatten(_p1)));}(grid);
+      return A2($Graphics$Element.flow,
+      $Graphics$Element.down,
+      _U.list([$Graphics$Element.leftAligned($Text.fromString(A2($Basics._op["++"],"Living cells: ",$Basics.toString(livingCells))))
+              ,$Graphics$Element.leftAligned($Text.fromString(A2($Basics._op["++"],"Dead cells: ",$Basics.toString(deadCells))))]));
+   };
+   var renderCell = function (_p2) {
+      var _p3 = _p2;
+      var _p6 = _p3._0;
+      var y = function (_p4) {    return $Basics.toFloat($Basics.snd(_p4));}(_p6);
+      var x = function (_p5) {    return $Basics.toFloat($Basics.fst(_p5));}(_p6);
       return A2($Graphics$Collage.move,
       {ctor: "_Tuple2",_0: x * 5 - 200,_1: y * 5 - 200},
-      A2($Graphics$Collage.filled,_p1._1 ? $Color.blue : $Color.white,$Graphics$Collage.square(5)));
+      A2($Graphics$Collage.filled,_p3._1 ? $Color.blue : $Color.white,$Graphics$Collage.square(5)));
    };
    var renderGrid = function (grid) {
       return A3($Graphics$Collage.collage,
@@ -6986,28 +6995,28 @@ Elm.Main.make = function (_elm) {
       renderCell,
       $List.concat($Matrix.toList(A2($Matrix.mapWithLocation,F2(function (v0,v1) {    return {ctor: "_Tuple2",_0: v0,_1: v1};}),grid)))));
    };
-   var view = function (grid) {    return renderGrid(grid);};
-   var count = function (predicate) {    return function (_p5) {    return $List.length(A2($List.filter,predicate,_p5));};};
-   var neighbours = F2(function (grid,_p6) {
-      var _p7 = _p6;
+   var view = function (grid) {    return A2($Graphics$Element.flow,$Graphics$Element.right,_U.list([renderGrid(grid),stats(grid)]));};
+   var count = function (predicate) {    return function (_p7) {    return $List.length(A2($List.filter,predicate,_p7));};};
+   var neighbours = F2(function (grid,_p8) {
+      var _p9 = _p8;
       return A2($List.filterMap,
       A2($Basics.flip,$Matrix.get,grid),
       A2($List.map,
-      function (_p8) {
-         var _p9 = _p8;
-         var _p11 = _p9._1;
-         var _p10 = _p9._0;
-         return {ctor: "_Tuple2",_0: _U.eq(_p10,-1) ? 49 : _p10,_1: _U.eq(_p11,-1) ? 49 : _p11};
+      function (_p10) {
+         var _p11 = _p10;
+         var _p13 = _p11._1;
+         var _p12 = _p11._0;
+         return {ctor: "_Tuple2",_0: _U.eq(_p12,-1) ? 49 : _p12,_1: _U.eq(_p13,-1) ? 49 : _p13};
       },
       A2($List.map,
-      function (_p12) {
-         var _p13 = _p12;
-         return {ctor: "_Tuple2",_0: _p7._0 - _p13._0,_1: _p7._1 - _p13._1};
-      },
-      A2($List.filter,
       function (_p14) {
          var _p15 = _p14;
-         return $Basics.not(_U.eq(_p15._0,0) && _U.eq(_p15._1,0));
+         return {ctor: "_Tuple2",_0: _p9._0 - _p15._0,_1: _p9._1 - _p15._1};
+      },
+      A2($List.filter,
+      function (_p16) {
+         var _p17 = _p16;
+         return $Basics.not(_U.eq(_p17._0,0) && _U.eq(_p17._1,0));
       },
       A2($List.concatMap,function (x) {    return A2($List.map,function (y) {    return {ctor: "_Tuple2",_0: x,_1: y};},_U.range(-1,1));},_U.range(-1,1))))));
    });
@@ -7038,5 +7047,6 @@ Elm.Main.make = function (_elm) {
                              ,update: update
                              ,renderCell: renderCell
                              ,renderGrid: renderGrid
+                             ,stats: stats
                              ,view: view};
 };

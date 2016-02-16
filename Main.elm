@@ -49,42 +49,33 @@ port externalSeed : Int
 -- Any live cell with more than three live neighbours dies, as if by over-population.
 -- Any dead cell with exactly three live neighbours becomes a live cell, as if by reproduction.
 
-neighbours : Grid -> Location -> List Bool
-neighbours grid (x,y) =
-  List.concatMap (\x -> List.map (\y -> (x,y)) [-1..1]) [-1..1]
-    |> List.filter (\(dx,dy) -> not (dx == 0 && dy == 0))
-    |> List.map (\(dx,dy) -> ((x - dx) % gridWidth, (y - dy) % gridHeight))
-    |> List.filterMap ((flip Matrix.get) grid)
+partialSum : Grid -> Location -> Bool -> Int
+partialSum grid (x,y) value =
+    let v' = Matrix.get (((x-1) % gridWidth), y) grid |> Maybe.withDefault False
+        v'' = Matrix.get (((x+1) % gridWidth), y) grid |> Maybe.withDefault False
+    in (if value then 1 else 0) + (if v' then 1 else 0) + (if v'' then 1 else 0)
 
-count : (a -> Bool) -> List a -> Int
-count predicate =
-  (List.filter predicate >> List.length)
+fullSum : Matrix Int -> Location -> Int -> Int
+fullSum grid (x,y) value =
+    let v' = Matrix.get (x, ((y-1) % gridHeight)) grid |> Maybe.withDefault 0
+        v'' = Matrix.get (x, ((y+1) % gridHeight)) grid |> Maybe.withDefault 0
+    in value + v' + v''
 
-numberOfLivingNeighbors : Grid -> Location -> Int
-numberOfLivingNeighbors grid location =
-  count identity (neighbours grid location)
-  
-
-transformCell : Grid -> Location -> Bool -> Bool
-transformCell grid location alive =
-  let
-    livingNeighbors = numberOfLivingNeighbors grid location
-  in
-    if alive && livingNeighbors < 2 then
-      False
-    else if alive && (livingNeighbors == 2 || livingNeighbors == 3) then
-      True
-    else if alive && livingNeighbors > 3 then
-      False
-    else if (not alive) && livingNeighbors == 3 then
-      True
-    else
-      False
+liveOrDie : Grid -> Location -> Int -> Bool
+liveOrDie startingGrid location value =
+    case value of
+        0 -> False
+        1 -> False
+        2 -> False
+        3 -> True
+        4 -> Matrix.get location startingGrid |> Maybe.withDefault False
+        _ -> False
 
 update : Time -> Grid -> Grid
 update time grid =
-  Matrix.mapWithLocation (transformCell grid) grid
-
+  let partialSumGrid = Matrix.mapWithLocation (partialSum grid) grid
+      fullSumGrid = Matrix.mapWithLocation (fullSum partialSumGrid) partialSumGrid
+  in Matrix.mapWithLocation (liveOrDie grid) fullSumGrid
 
 -- VIEW
 

@@ -16,6 +16,17 @@ main =
     view
     (Signal.foldp update init (Time.fps 60))
 
+-- CONSTANTS
+
+cellSize : number
+cellSize = 5
+
+gridWidth : number
+gridWidth = 80
+
+gridHeight : number
+gridHeight = 80
+
 -- MODEL
 
 type alias Grid = Matrix Bool
@@ -23,9 +34,11 @@ type alias Grid = Matrix Bool
 init : Grid
 init =
   let
-    generator = Matrix.Random.matrix (Random.int 80 80) (Random.int 80 80) (Random.bool)
+    widthGenerator = Random.int gridWidth gridWidth
+    heightGenerator = Random.int gridHeight gridHeight
+    gridGenerator = Matrix.Random.matrix widthGenerator heightGenerator Random.bool
   in
-    Random.generate generator (Random.initialSeed externalSeed) |> fst
+    Random.generate gridGenerator (Random.initialSeed externalSeed) |> fst
 
 port externalSeed : Int
 
@@ -40,8 +53,7 @@ neighbours : Grid -> Location -> List Bool
 neighbours grid (x,y) =
   List.concatMap (\x -> List.map (\y -> (x,y)) [-1..1]) [-1..1]
     |> List.filter (\(dx,dy) -> not (dx == 0 && dy == 0))
-    |> List.map (\(dx,dy) -> (x - dx, y - dy))
-    |> List.map (\(x',y') -> (if x' == -1 then 49 else x', if y' == -1 then 49 else y'))
+    |> List.map (\(dx,dy) -> ((x - dx) % gridWidth, (y - dy) % gridHeight))
     |> List.filterMap ((flip Matrix.get) grid)
 
 count : (a -> Bool) -> List a -> Int
@@ -82,9 +94,9 @@ renderCell (location, alive) =
     x = (fst >> toFloat) location
     y = (snd >> toFloat) location
   in
-    square 5
+    square cellSize
       |> filled (if alive then blue else white)
-      |> move (x * 5 - 200,y * 5 - 200)
+      |> move (x * cellSize - 200, y * cellSize - 200)
 
 renderGrid : Grid -> Element
 renderGrid grid =

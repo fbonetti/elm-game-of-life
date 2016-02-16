@@ -6978,14 +6978,52 @@ Elm.Main.make = function (_elm) {
       _U.list([$Graphics$Element.leftAligned($Text.fromString(A2($Basics._op["++"],"Living cells: ",$Basics.toString(livingCells))))
               ,$Graphics$Element.leftAligned($Text.fromString(A2($Basics._op["++"],"Dead cells: ",$Basics.toString(deadCells))))]));
    };
-   var renderCell = function (_p2) {
-      var _p3 = _p2;
-      var _p6 = _p3._0;
-      var y = function (_p4) {    return $Basics.toFloat($Basics.snd(_p4));}(_p6);
-      var x = function (_p5) {    return $Basics.toFloat($Basics.fst(_p5));}(_p6);
+   var count = function (predicate) {    return function (_p2) {    return $List.length(A2($List.filter,predicate,_p2));};};
+   var externalSeed = Elm.Native.Port.make(_elm).inbound("externalSeed",
+   "Int",
+   function (v) {
+      return typeof v === "number" && isFinite(v) && Math.floor(v) === v ? v : _U.badPort("an integer",v);
+   });
+   var gridHeight = 80;
+   var gridWidth = 80;
+   var init = function () {
+      var heightGenerator = A2($Random.$int,gridHeight,gridHeight);
+      var widthGenerator = A2($Random.$int,gridWidth,gridWidth);
+      var gridGenerator = A3($Matrix$Random.matrix,widthGenerator,heightGenerator,$Random.bool);
+      return $Basics.fst(A2($Random.generate,gridGenerator,$Random.initialSeed(externalSeed)));
+   }();
+   var neighbours = F2(function (grid,_p3) {
+      var _p4 = _p3;
+      return A2($List.filterMap,
+      A2($Basics.flip,$Matrix.get,grid),
+      A2($List.map,
+      function (_p5) {
+         var _p6 = _p5;
+         return {ctor: "_Tuple2",_0: A2($Basics._op["%"],_p4._0 - _p6._0,gridWidth),_1: A2($Basics._op["%"],_p4._1 - _p6._1,gridHeight)};
+      },
+      A2($List.filter,
+      function (_p7) {
+         var _p8 = _p7;
+         return $Basics.not(_U.eq(_p8._0,0) && _U.eq(_p8._1,0));
+      },
+      A2($List.concatMap,function (x) {    return A2($List.map,function (y) {    return {ctor: "_Tuple2",_0: x,_1: y};},_U.range(-1,1));},_U.range(-1,1)))));
+   });
+   var numberOfLivingNeighbors = F2(function (grid,location) {    return A2(count,$Basics.identity,A2(neighbours,grid,location));});
+   var transformCell = F3(function (grid,location,alive) {
+      var livingNeighbors = A2(numberOfLivingNeighbors,grid,location);
+      return alive && _U.cmp(livingNeighbors,2) < 0 ? false : alive && (_U.eq(livingNeighbors,2) || _U.eq(livingNeighbors,
+      3)) ? true : alive && _U.cmp(livingNeighbors,3) > 0 ? false : $Basics.not(alive) && _U.eq(livingNeighbors,3) ? true : false;
+   });
+   var update = F2(function (time,grid) {    return A2($Matrix.mapWithLocation,transformCell(grid),grid);});
+   var cellSize = 5;
+   var renderCell = function (_p9) {
+      var _p10 = _p9;
+      var _p13 = _p10._0;
+      var y = function (_p11) {    return $Basics.toFloat($Basics.snd(_p11));}(_p13);
+      var x = function (_p12) {    return $Basics.toFloat($Basics.fst(_p12));}(_p13);
       return A2($Graphics$Collage.move,
-      {ctor: "_Tuple2",_0: x * 5 - 200,_1: y * 5 - 200},
-      A2($Graphics$Collage.filled,_p3._1 ? $Color.blue : $Color.white,$Graphics$Collage.square(5)));
+      {ctor: "_Tuple2",_0: x * cellSize - 200,_1: y * cellSize - 200},
+      A2($Graphics$Collage.filled,_p10._1 ? $Color.blue : $Color.white,$Graphics$Collage.square(cellSize)));
    };
    var renderGrid = function (grid) {
       return A3($Graphics$Collage.collage,
@@ -6996,49 +7034,12 @@ Elm.Main.make = function (_elm) {
       $List.concat($Matrix.toList(A2($Matrix.mapWithLocation,F2(function (v0,v1) {    return {ctor: "_Tuple2",_0: v0,_1: v1};}),grid)))));
    };
    var view = function (grid) {    return A2($Graphics$Element.flow,$Graphics$Element.right,_U.list([renderGrid(grid),stats(grid)]));};
-   var count = function (predicate) {    return function (_p7) {    return $List.length(A2($List.filter,predicate,_p7));};};
-   var neighbours = F2(function (grid,_p8) {
-      var _p9 = _p8;
-      return A2($List.filterMap,
-      A2($Basics.flip,$Matrix.get,grid),
-      A2($List.map,
-      function (_p10) {
-         var _p11 = _p10;
-         var _p13 = _p11._1;
-         var _p12 = _p11._0;
-         return {ctor: "_Tuple2",_0: _U.eq(_p12,-1) ? 49 : _p12,_1: _U.eq(_p13,-1) ? 49 : _p13};
-      },
-      A2($List.map,
-      function (_p14) {
-         var _p15 = _p14;
-         return {ctor: "_Tuple2",_0: _p9._0 - _p15._0,_1: _p9._1 - _p15._1};
-      },
-      A2($List.filter,
-      function (_p16) {
-         var _p17 = _p16;
-         return $Basics.not(_U.eq(_p17._0,0) && _U.eq(_p17._1,0));
-      },
-      A2($List.concatMap,function (x) {    return A2($List.map,function (y) {    return {ctor: "_Tuple2",_0: x,_1: y};},_U.range(-1,1));},_U.range(-1,1))))));
-   });
-   var numberOfLivingNeighbors = F2(function (grid,location) {    return A2(count,$Basics.identity,A2(neighbours,grid,location));});
-   var transformCell = F3(function (grid,location,alive) {
-      var livingNeighbors = A2(numberOfLivingNeighbors,grid,location);
-      return alive && _U.cmp(livingNeighbors,2) < 0 ? false : alive && (_U.eq(livingNeighbors,2) || _U.eq(livingNeighbors,
-      3)) ? true : alive && _U.cmp(livingNeighbors,3) > 0 ? false : $Basics.not(alive) && _U.eq(livingNeighbors,3) ? true : false;
-   });
-   var update = F2(function (time,grid) {    return A2($Matrix.mapWithLocation,transformCell(grid),grid);});
-   var externalSeed = Elm.Native.Port.make(_elm).inbound("externalSeed",
-   "Int",
-   function (v) {
-      return typeof v === "number" && isFinite(v) && Math.floor(v) === v ? v : _U.badPort("an integer",v);
-   });
-   var init = function () {
-      var generator = A3($Matrix$Random.matrix,A2($Random.$int,80,80),A2($Random.$int,80,80),$Random.bool);
-      return $Basics.fst(A2($Random.generate,generator,$Random.initialSeed(externalSeed)));
-   }();
    var main = A2($Signal.map,view,A3($Signal.foldp,update,init,$Time.fps(60)));
    return _elm.Main.values = {_op: _op
                              ,main: main
+                             ,cellSize: cellSize
+                             ,gridWidth: gridWidth
+                             ,gridHeight: gridHeight
                              ,init: init
                              ,neighbours: neighbours
                              ,count: count

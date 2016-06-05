@@ -16,6 +16,7 @@ main =
     view
     (Signal.foldp update init (Time.fps 60))
 
+
 -- CONSTANTS
 
 cellSize : number
